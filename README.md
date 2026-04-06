@@ -30,36 +30,55 @@ Full list in [`Sources/ClipScrub/URLSanitizer.swift`](Sources/ClipScrub/URLSanit
 - **Sound on Clean** — subtle tick sound when a URL is cleaned (toggleable).
 - **Fetch Page Info** — fetches page title, description, and thumbnail for cleaned URLs (toggleable). Uses Twitter's oEmbed API for X/Twitter links.
 
-## Build
+## Download
 
-Requires macOS 13+ and Swift 5.9+.
+**[Download ClipScrub v1.0](https://github.com/RidgebackZulu/clipscrub/releases/latest)** (Apple Silicon, 70KB zip)
+
+### Install
+
+1. Download `ClipScrub-v1.0-arm64.zip` from the link above
+2. Double-click the zip to unzip it
+3. Drag `ClipScrub.app` into your `/Applications` folder
+4. Open it — if macOS says it's from an unidentified developer, right-click the app and choose **Open**, then click **Open** again in the dialog
+5. A link icon appears in your menu bar — ClipScrub is now running
+
+That's it. Copy any URL and tracking parameters are stripped automatically.
+
+### Optional: Start at login
+
+Click the link icon in your menu bar > **Settings** > **Launch at Login**
+
+### Uninstall
+
+1. Click the link icon in your menu bar > **Quit ClipScrub**
+2. Delete `ClipScrub.app` from your Applications folder
+3. If you enabled Launch at Login, click **Help** > **How to Uninstall** > **Remove Launch Agent Now** before quitting (or manually delete `~/Library/LaunchAgents/com.clipscrub.agent.plist`)
+
+### Requirements
+
+- macOS 13 (Ventura) or later
+- Apple Silicon Mac (M1, M2, M3, M4)
+
+---
+
+## Build from source
+
+Requires Xcode command line tools (Swift 5.9+).
 
 ```bash
-# Build the app bundle
 ./build.sh
-
-# Or manually
-swift build -c release
 ```
 
-The build script creates `ClipScrub.app` with an ad-hoc code signature.
+This compiles a release binary, creates `ClipScrub.app`, and signs it with an ad-hoc signature.
 
-## Install
+To install manually after building:
 
 ```bash
 cp -r ClipScrub.app /Applications/
 open /Applications/ClipScrub.app
 ```
 
-To start at login, enable "Launch at Login" in the menu bar dropdown Settings.
-
-## Uninstall
-
-1. Quit ClipScrub from the menu bar
-2. Delete `/Applications/ClipScrub.app`
-3. Delete `~/Library/LaunchAgents/com.clipscrub.agent.plist` (or use "Remove Launch Agent Now" from Help > How to Uninstall)
-
-## Run tests
+### Run tests
 
 ```bash
 swift test
