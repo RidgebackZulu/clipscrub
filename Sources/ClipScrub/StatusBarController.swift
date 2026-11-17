@@ -239,8 +239,8 @@ final class StatusBarController {
         NSApp.activate(ignoringOtherApps: true)
         NSApp.orderFrontStandardAboutPanel(options: [
             .applicationName: "ClipScrub",
-            .applicationVersion: "1.0",
-            .version: "1",
+            .applicationVersion: "1.1.0",
+            .version: "2",
         ])
     }
 

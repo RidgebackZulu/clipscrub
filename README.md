@@ -34,11 +34,11 @@ Full list in [`Sources/ClipScrub/URLSanitizer.swift`](Sources/ClipScrub/URLSanit
 
 ## Download
 
-**[Download ClipScrub v1.0](https://github.com/RidgebackZulu/clipscrub/releases/latest)** (Apple Silicon, 70KB zip)
+**[Download ClipScrub v1.1.0](https://github.com/RidgebackZulu/clipscrub/releases/latest)** (Apple Silicon)
 
 ### Install
 
-1. Download `ClipScrub-v1.0-arm64.zip` from the link above
+1. Download `ClipScrub-v1.1.0-arm64.zip` from the link above
 2. Double-click the zip to unzip it
 3. Drag `ClipScrub.app` into your `/Applications` folder
 4. Open it — if macOS says it's from an unidentified developer, right-click the app and choose **Open**, then click **Open** again in the dialog
