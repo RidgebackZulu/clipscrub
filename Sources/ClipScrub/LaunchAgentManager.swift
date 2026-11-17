@@ -10,33 +10,22 @@ struct LaunchAgentManager {
         FileManager.default.fileExists(atPath: plistPath)
     }
 
-    static func install() {
-        let appPath = Bundle.main.bundlePath
-        let execPath = "\(appPath)/Contents/MacOS/ClipScrub"
+    static func plistData(executablePath: String) throws -> Data {
+        let plist: [String: Any] = [
+            "Label": "com.clipscrub.agent",
+            "ProgramArguments": [executablePath],
+            "RunAtLoad": true,
+            "KeepAlive": false,
+        ]
+        return try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+    }
 
-        let plist = """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
-        <dict>
-            <key>Label</key>
-            <string>com.clipscrub.agent</string>
-            <key>ProgramArguments</key>
-            <array>
-                <string>\(execPath)</string>
-            </array>
-            <key>RunAtLoad</key>
-            <true/>
-            <key>KeepAlive</key>
-            <false/>
-        </dict>
-        </plist>
-        """
-
-        // Ensure LaunchAgents directory exists
+    static func install() throws {
+        let execPath = "\(Bundle.main.bundlePath)/Contents/MacOS/ClipScrub"
+        let data = try plistData(executablePath: execPath)
         let dir = (plistPath as NSString).deletingLastPathComponent
-        try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
-        try? plist.write(toFile: plistPath, atomically: true, encoding: .utf8)
+        try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        try data.write(to: URL(fileURLWithPath: plistPath), options: .atomic)
     }
 
     static func uninstall() {

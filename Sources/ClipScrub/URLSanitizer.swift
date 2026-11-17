@@ -10,21 +10,8 @@ struct URLSanitizer {
         "fbclid", "fb_action_ids", "fb_action_types", "fb_ref", "fb_source",
         // Instagram
         "igsh", "igshid", "ig_rid", "ig_mid",
-        // Twitter/X (non-domain-scoped)
-        "ref_src", "ref_url",
-        // Google
-        "gclid", "gclsrc", "dclid", "gs_lcp", "gs_mss", "ei", "sei", "ved",
-        "uact", "oq", "sclient", "sourceid", "sxsrf", "source", "biw", "bih",
-        // TikTok
-        "_t", "_r", "is_from_webapp", "sender_device", "is_copy_url",
-        // YouTube
-        "si", "feature", "pp", "embeds_referring_euri", "source_ve_path",
-        // LinkedIn
-        "trackingid", "refid", "trk", "lipi", "lici",
-        // Microsoft
-        "msclkid", "ocid", "cvid",
-        // Reddit
-        "share_id", "ref", "ref_source",
+        // Advertising click IDs can appear on any destination site.
+        "gclid", "gclsrc", "dclid", "msclkid",
         // Mailchimp
         "mc_cid", "mc_eid",
         // Omeda/Olytics
@@ -38,12 +25,30 @@ struct URLSanitizer {
     ]
 
     /// Parameters stripped only when the URL matches certain domains
-    static let domainScopedParams: [String: Set<String>] = [
-        "twitter.com": ["s", "t"],
-        "x.com": ["s", "t"],
-        "mobile.twitter.com": ["s", "t"],
-        "mobile.x.com": ["s", "t"],
-    ]
+    static let domainScopedParams: [String: Set<String>] = {
+        var domains: [String: Set<String>] = [
+        "twitter.com": ["s", "t", "ref_src", "ref_url"],
+        "x.com": ["s", "t", "a", "ref_src", "ref_url"],
+        "google.com": ["gs_lcp", "gs_mss", "ei", "sei", "ved", "uact", "oq",
+                       "sclient", "sourceid", "sxsrf", "source", "biw", "bih"],
+        "tiktok.com": ["_t", "_r", "is_from_webapp", "sender_device", "is_copy_url"],
+        "youtube.com": ["si", "feature", "pp", "embeds_referring_euri", "source_ve_path"],
+        "youtu.be": ["si", "feature", "pp", "embeds_referring_euri", "source_ve_path"],
+        "linkedin.com": ["trackingid", "refid", "trk", "lipi", "lici"],
+        "bing.com": ["ocid", "cvid"],
+        "msn.com": ["ocid", "cvid"],
+        "microsoft.com": ["ocid", "cvid"],
+        "reddit.com": ["share_id", "ref", "ref_source"],
+        "redd.it": ["share_id", "ref", "ref_source"],
+        ]
+        // Explicit regional hosts: never match arbitrary "google.*" domains.
+        for domain in ["google.co.uk", "google.ca", "google.com.au", "google.de",
+                       "google.fr", "google.co.jp", "google.co.in", "google.com.br",
+                       "google.it", "google.es", "google.nl", "google.ch"] {
+            domains[domain] = domains["google.com"]
+        }
+        return domains
+    }()
 
     /// Returns the cleaned URL string, or nil if no changes were needed.
     static func sanitize(_ urlString: String) -> String? {

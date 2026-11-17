@@ -13,8 +13,11 @@ final class StatusBarController {
         self.historyManager = historyManager
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
+        statusItem.isVisible = true
         if let button = statusItem.button {
             button.image = NSImage(systemSymbolName: "link", accessibilityDescription: "ClipScrub")
+            button.image?.isTemplate = true
+            button.toolTip = "ClipScrub — clipboard URL cleaner"
         }
 
         buildMenu()
@@ -121,7 +124,7 @@ final class StatusBarController {
 
         let fetchItem = NSMenuItem(title: "Fetch Page Info", action: #selector(toggleFetchMetadata(_:)), keyEquivalent: "")
         fetchItem.target = self
-        fetchItem.state = (clipboardMonitor?.fetchMetadata ?? true) ? .on : .off
+        fetchItem.state = (clipboardMonitor?.fetchMetadata ?? false) ? .on : .off
         settingsMenu.addItem(fetchItem)
 
         settingsItem.submenu = settingsMenu
@@ -181,7 +184,16 @@ final class StatusBarController {
         if LaunchAgentManager.isInstalled {
             LaunchAgentManager.uninstall()
         } else {
-            LaunchAgentManager.install()
+            do {
+                try LaunchAgentManager.install()
+            } catch {
+                let alert = NSAlert()
+                alert.messageText = "Could not enable Launch at Login"
+                alert.informativeText = error.localizedDescription
+                alert.alertStyle = .warning
+                NSApp.activate(ignoringOtherApps: true)
+                alert.runModal()
+            }
         }
         buildMenu()
     }

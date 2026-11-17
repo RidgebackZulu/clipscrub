@@ -76,6 +76,47 @@ final class URLSanitizerTests: XCTestCase {
         XCTAssertEqual(result, "https://example.com/page#section-2")
     }
 
+    func testStripsNewXShareParameter() {
+        XCTAssertEqual(URLSanitizer.sanitize("https://x.com/BNONews/status/2122531821275517355?a=V6GaIWdbKeXiq0OUC_s"),
+                       "https://x.com/BNONews/status/2122531821275517355")
+    }
+
+    func testXShareParameterPreservesOtherQueryAndFragment() {
+        XCTAssertEqual(URLSanitizer.sanitize("https://mobile.x.com/user/status/123?a=one&a=two&id=42#photo"),
+                       "https://mobile.x.com/user/status/123?id=42#photo")
+    }
+
+    func testShareParameterIsDomainScoped() {
+        for host in ["example.com", "notx.com", "x.com.example.com"] {
+            XCTAssertNil(URLSanitizer.sanitize("https://\(host)/?a=keep"))
+        }
+    }
+
+    func testPreservesAmbiguousParametersOutsideTheirServices() {
+        for host in ["example.com", "youtube.com.example.com", "notreddit.com", "google.co.uk.example.com", "notgoogle.co.uk"] {
+            let url = "https://\(host)/?source=account&feature=export&ref=document&si=42&ei=7&_t=version&trackingid=order&ocid=item"
+            XCTAssertNil(URLSanitizer.sanitize(url))
+            XCTAssertEqual(URLSanitizer.sanitize(url + "&utm_source=test"), url)
+        }
+    }
+
+    func testServiceSpecificParametersStillRemoved() {
+        for (host, query) in [
+            ("www.google.com", "source=share&ei=1&ved=2"),
+            ("www.google.co.uk", "source=share&ei=1&ved=2"),
+            ("www.google.com.au", "source=share&ei=1&ved=2"),
+            ("www.youtube.com", "feature=share&si=1&pp=2"),
+            ("youtu.be", "si=1"),
+            ("www.reddit.com", "ref=share&ref_source=link"),
+            ("vm.tiktok.com", "_t=1&_r=2"),
+            ("www.linkedin.com", "trackingId=1&trk=2"),
+            ("www.msn.com", "ocid=1&cvid=2")
+        ] {
+            XCTAssertEqual(URLSanitizer.sanitize("https://\(host)/?\(query)&id=keep"),
+                           "https://\(host)/?id=keep")
+        }
+    }
+
     // MARK: - isURL tests
 
     func testIsURLWithHTTPS() {

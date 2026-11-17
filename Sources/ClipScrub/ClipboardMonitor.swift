@@ -11,7 +11,7 @@ final class ClipboardMonitor {
     private var lastResetDate: Date = Date()
 
     var soundEnabled = true
-    var fetchMetadata = true
+    var fetchMetadata = false
 
     init(historyManager: HistoryManager, onClean: @escaping () -> Void) {
         self.historyManager = historyManager
@@ -23,7 +23,10 @@ final class ClipboardMonitor {
         let source = DispatchSource.makeTimerSource(queue: queue)
         source.schedule(deadline: .now() + 1, repeating: 1.0)
         source.setEventHandler { [weak self] in
-            self?.checkClipboard()
+            // Keep pasteboard, history, settings and menu state on one queue.
+            DispatchQueue.main.async { [weak self] in
+                self?.checkClipboard()
+            }
         }
         source.resume()
         timer = source
@@ -55,6 +58,9 @@ final class ClipboardMonitor {
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
         guard URLSanitizer.isURL(trimmed) else { return }
         guard let cleaned = URLSanitizer.sanitize(trimmed) else { return }
+
+        // Do not overwrite a newer copy made while sanitizing.
+        guard NSPasteboard.general.changeCount == currentCount else { return }
 
         // Write cleaned URL back to clipboard
         NSPasteboard.general.clearContents()

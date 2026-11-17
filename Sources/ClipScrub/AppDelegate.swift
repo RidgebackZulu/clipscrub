@@ -4,6 +4,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusBarController: StatusBarController!
     private var clipboardMonitor: ClipboardMonitor!
     private var sleepWakeHandler: SleepWakeHandler!
+    private var monitoringState = MonitoringState()
     private let historyManager = HistoryManager()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -20,24 +21,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         sleepWakeHandler = SleepWakeHandler(
             onSleep: { [weak self] in
-                self?.clipboardMonitor.pause()
-                self?.statusBarController.setPaused(true)
+                self?.monitoringState.sleeping = true
+                self?.applyMonitoringState()
             },
             onWake: { [weak self] in
-                self?.clipboardMonitor.resume()
-                self?.statusBarController.setPaused(false)
+                self?.monitoringState.sleeping = false
+                self?.applyMonitoringState()
             }
         )
 
         statusBarController.onPauseToggle = { [weak self] paused in
-            if paused {
-                self?.clipboardMonitor.pause()
-            } else {
-                self?.clipboardMonitor.resume()
-            }
+            self?.monitoringState.userPaused = paused
+            self?.applyMonitoringState()
         }
 
         clipboardMonitor.start()
+    }
+
+    private func applyMonitoringState() {
+        if monitoringState.isPaused {
+            clipboardMonitor.pause()
+        } else {
+            clipboardMonitor.resume()
+        }
+        statusBarController.setPaused(monitoringState.isPaused)
     }
 
     func applicationWillTerminate(_ notification: Notification) {

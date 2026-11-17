@@ -9,7 +9,7 @@ Copy a link riddled with `utm_source`, `fbclid`, `igsh`, etc. — ClipScrub sile
 - **UTM tags** — `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, etc.
 - **Facebook/Meta** — `fbclid`, `fb_action_ids`, `fb_ref`, etc.
 - **Instagram** — `igsh`, `igshid`, `ig_rid`, `ig_mid`
-- **Twitter/X** — `s`, `t` (domain-scoped), `ref_src`, `ref_url`
+- **Twitter/X** — `s`, `t` (domain-scoped), `a` on x.com and its subdomains, `ref_src`, `ref_url`
 - **Google** — `gclid`, `gclsrc`, `dclid`, `ved`, `sxsrf`, `sclient`, etc.
 - **TikTok** — `_t`, `_r`, `is_from_webapp`, `sender_device`
 - **YouTube** — `si`, `feature`, `pp`
@@ -18,17 +18,19 @@ Copy a link riddled with `utm_source`, `fbclid`, `igsh`, etc. — ClipScrub sile
 - **Reddit** — `share_id`, `ref`, `ref_source`
 - **Email/Marketing** — Mailchimp, HubSpot, Marketo, Olytics, etc.
 
+Ambiguous service parameters (`source`, `feature`, `ref`, `si`, and similar names) are stripped only on explicitly listed service domains and their subdomains. For example, `source=account` survives on an unrelated website. Advertising click IDs and namespaced tracking tags remain global. Google-specific rules cover `google.com` and an explicit list of regional domains in the sanitizer; unlisted domains conservatively retain ambiguous parameters.
+
 Full list in [`Sources/ClipScrub/URLSanitizer.swift`](Sources/ClipScrub/URLSanitizer.swift).
 
 ## Features
 
 - **Menu bar app** — no Dock icon, no windows. Just a link icon in your menu bar.
-- **Clipboard history** — last 10 cleaned URLs with page titles, descriptions, and thumbnails (fetched from Open Graph tags).
+- **Clipboard history** — last 10 cleaned URLs, held in memory until the app quits. Optional page titles, descriptions, and thumbnails. This is not a history of all clipboard copies.
 - **Click to copy** — click any history entry to copy the clean URL.
-- **Pause/Resume** — toggle monitoring on/off from the menu.
-- **Launch at Login** — installs a LaunchAgent so it starts automatically.
+- **Pause/Resume** — toggle monitoring on/off from the menu. A manual pause persists across sleep/wake (until you resume or restart the app).
+- **Launch at Login** — installs a LaunchAgent so it starts automatically. Paths containing XML special characters are safely serialized; installation errors are shown in an alert.
 - **Sound on Clean** — subtle tick sound when a URL is cleaned (toggleable).
-- **Fetch Page Info** — fetches page title, description, and thumbnail for cleaned URLs (toggleable). Uses Twitter's oEmbed API for X/Twitter links.
+- **Fetch Page Info** — disabled by default on every launch. Enabling it contacts copied websites for page titles, descriptions, and thumbnails; X/Twitter previews also contact Twitter's oEmbed API and unavatar.io.
 
 ## Download
 
@@ -97,6 +99,7 @@ Sources/ClipScrub/
   HistoryManager.swift     — Ring buffer of last 10 entries
   HistoryMenuItemView.swift — Custom NSView for rich menu items
   StatusBarController.swift — NSStatusItem menu bar UI
+  MonitoringState.swift    — Separates manual pause from sleep suspension
   SleepWakeHandler.swift   — Pauses on sleep, resumes on wake
   LaunchAgentManager.swift — Install/remove ~/Library/LaunchAgents plist
 ```
@@ -104,9 +107,9 @@ Sources/ClipScrub/
 ## How it works
 
 1. A `DispatchSourceTimer` fires every 1 second on a background queue
-2. It checks `NSPasteboard.general.changeCount` — an integer comparison, effectively free
+2. It dispatches to the main queue (shared with history and settings) and checks `NSPasteboard.general.changeCount` — an integer comparison, effectively free
 3. If the clipboard changed, it reads the string and checks if it's a URL
 4. If it's a URL, it runs it through `URLSanitizer` which strips known tracking parameters
 5. If anything was stripped, it writes the clean URL back and updates the internal change counter (to avoid re-processing its own write)
-6. The cleaned URL is added to history, and metadata is fetched in the background
+6. The cleaned URL is added to history, and metadata is fetched in the background only if Fetch Page Info is enabled
 7. Non-URL clipboard content is never touched
